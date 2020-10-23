@@ -5,7 +5,7 @@ on:
 
 jobs:
   NG-SAST-Build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
