@@ -1,0 +1,46 @@
+name: Analyze with ShiftLeft NG SAST
+
+on: 
+  workflow_dispatch:
+  pull_request: 
+    branches: [master]
+
+jobs:
+  NG-SAST-Build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.101
+    - name: Download ShiftLeft cli
+      run: |
+        Invoke-WebRequest -Uri 'https://cdn.shiftleft.io/download/sl-latest-windows-x64.zip' -OutFile sl.zip
+        Expand-Archive -Path sl.zip -DestinationPath .
+    - name: Build console app
+      run: dotnet build netcoreConsole
+    - name: Analyze with ngsast
+      run: .\sl analyze --app netcoreConsole --tag branch=$Env:GITHUB_REF --csharp --dotnet-core --cpg netcoreConsole/netcoreConsole/netcoreConsole.csproj
+      env:
+        SHIFTLEFT_ORG_ID: ${{ secrets.SHIFTLEFT_ORG_ID }}
+        SHIFTLEFT_ACCESS_TOKEN: ${{ secrets.SHIFTLEFT_ACCESS_TOKEN }}
+
+    - name: Build web api
+      run: dotnet build netcoreWebapi
+    - name: Analyze with ngsast
+      run: .\sl analyze --app netcoreWebapi --tag branch=$Env:GITHUB_REF --csharp --dotnet-core --cpg netcoreWebapi/netcoreWebapi.csproj
+      env:
+        SHIFTLEFT_ORG_ID: ${{ secrets.SHIFTLEFT_ORG_ID }}
+        SHIFTLEFT_ACCESS_TOKEN: ${{ secrets.SHIFTLEFT_ACCESS_TOKEN }}
+
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.0
+    - name: Build netfwWebapi
+      run: msbuild netfwWebapi/netfwWebapi.sln
+    - name: Analyze with ngsast
+      run: .\sl analyze --app netfwWebapi --tag branch=$Env:GITHUB_REF --csharp --cpg netfwWebapi/netfwWebapi.sln
+      env:
+        SHIFTLEFT_ORG_ID: ${{ secrets.SHIFTLEFT_ORG_ID }}
+        SHIFTLEFT_ACCESS_TOKEN: ${{ secrets.SHIFTLEFT_ACCESS_TOKEN }}
