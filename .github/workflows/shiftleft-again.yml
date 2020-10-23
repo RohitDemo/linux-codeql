@@ -8,6 +8,10 @@ on:
 jobs:
   NG-SAST-Build:
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['csharp']
 
     steps:
     - uses: actions/checkout@v2
@@ -19,6 +23,12 @@ jobs:
       run: |
         Invoke-WebRequest -Uri 'https://cdn.shiftleft.io/download/sl-latest-windows-x64.zip' -OutFile sl.zip
         Expand-Archive -Path sl.zip -DestinationPath .
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: ${{ matrix.language }}
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v1
     - name: Build console app
       run: dotnet build netcoreConsole
     - name: Analyze with ngsast
