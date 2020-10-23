@@ -18,8 +18,7 @@ jobs:
         dotnet-version: 3.1.101
     - name: Download ShiftLeft cli
       run: |
-        Invoke-WebRequest -Uri 'https://cdn.shiftleft.io/download/sl-latest-windows-x64.zip' -OutFile sl.zip
-        Expand-Archive -Path sl.zip -DestinationPath .
+        curl https://cdn.shiftleft.io/download/sl > ${GITHUB_WORKSPACE}/sl && chmod a+rx ${GITHUB_WORKSPACE}/sl
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:
@@ -27,7 +26,7 @@ jobs:
     - name: Autobuild
       uses: github/codeql-action/autobuild@v1
     - name: Analyze with ngsast
-      run: .\sl analyze --app netcoreConsole --tag branch=$Env:GITHUB_REF --csharp --dotnet-core --cpg netcoreConsole/netcoreConsole/netcoreConsole.csproj
+      run: ${GITHUB_WORKSPACE}/sl analyze --verbose --version-id 1 --app netcoreConsole --tag branch=${GITHUB_REF} --csharp $(pwd)
       env:
         SHIFTLEFT_ORG_ID: ${{ secrets.SHIFTLEFT_ORG_ID }}
         SHIFTLEFT_ACCESS_TOKEN: ${{ secrets.SHIFTLEFT_ACCESS_TOKEN }}
